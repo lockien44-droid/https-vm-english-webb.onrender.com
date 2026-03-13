@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Self-Study VM</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📚</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800&family=Quicksand:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+<link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+<div class="app-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">MENU</div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-group">
+        <div class="nav-title">Main</div>
+        <a class="nav-item active" onclick="showPage('home')" style="cursor: pointer;">
+          <span class="nav-icon">🏠</span>
+          <span>Trang chủ</span>
+        </a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-title">Học từ vựng</div>
+        <div style="max-height: 40vh; overflow-y: auto; overflow-x: hidden; padding-right: 5px;" class="sidebar-scrollable">
+          <!-- Core Hardcoded Topics -->
+          <a class="nav-item" onclick="showBodyVocab()" style="cursor: pointer;"><span class="nav-icon">👤</span><span>Cơ thể</span></a>
+          <a class="nav-item" onclick="showAnimalVocab()" style="cursor: pointer;"><span class="nav-icon">🐶</span><span>Động vật</span></a>
+          <a class="nav-item" onclick="loadDynamicTopic('food', '🍎 Đồ ăn')" style="cursor: pointer;"><span class="nav-icon">🍎</span><span>Đồ ăn</span></a>
+          <a class="nav-item" onclick="loadDynamicTopic('vehicle', '🚗 Phương tiện')" style="cursor: pointer;"><span class="nav-icon">🚗</span><span>Phương tiện</span></a>
+          
+          <!-- Dynamic 20 Topics -->
+          <a class="nav-item" onclick="loadDynamicTopic('house', '🏠 Đồ vật trong nhà')" style="cursor: pointer;"><span class="nav-icon">🏠</span><span>Nhà cửa</span></a>
+          <a class="nav-item" onclick="loadDynamicTopic('school', '🎒 Trường học')" style="cursor: pointer;"><span class="nav-icon">🎒</span><span>Trường học</span></a>
+          <a class="nav-item" onclick="loadDynamicTopic('family', '👨‍👩‍👧‍👦 Gia đình')" style="cursor: pointer;"><span class="nav-icon">👨‍👩‍👧‍👦</span><span>Gia đình</span></a>
+          <a class="nav-item" onclick="loadDynamicTopic('clothes', '👕 Quần áo')" style="cursor: pointer;"><span class="nav-icon">👕</span><span>Quần áo</span></a>
+          <a class="nav-item" onclick="loadDynamicTopic('color', '🎨 Màu sắc')" style="cursor: pointer;"><span class="nav-icon">🎨</span><span>Màu sắc</span></a>
+          <a class="nav-item" onclick="loadDynamicTopic('time', '⏳ Thời gian')" style="cursor: pointer;"><span class="nav-icon">⏳</span><span>Thời gian</span></a>
+          <a class="nav-item" onclick="loadDynamicTopic('weather', '☀️ Thời tiết')" style="cursor: pointer;"><span class="nav-icon">☀️</span><span>Thời tiết</span></a>
+          <a class="nav-item" onclick="loadDynamicTopic('nature', '🌲 Thiên nhiên')" style="cursor: pointer;"><span class="nav-icon">🌲</span><span>Thiên nhiên</span></a>
+          <a class="nav-item" onclick="loadDynamicTopic('city', '🏙️ Thành phố')" style="cursor: pointer;"><span class="nav-icon">🏙️</span><span>Thành phố</span></a>
+          <a class="nav-item" onclick="loadDynamicTopic('job', '👷 Nghề nghiệp')" style="cursor: pointer;"><span class="nav-icon">👷</span><span>Nghề nghiệp</span></a>
+          <a class="nav-item" onclick="loadDynamicTopic('sport', '⚽ Thể thao')" style="cursor: pointer;"><span class="nav-icon">⚽</span><span>Thể thao</span></a>
+          <a class="nav-item" onclick="loadDynamicTopic('music', '🎵 Âm nhạc')" style="cursor: pointer;"><span class="nav-icon">🎵</span><span>Âm nhạc</span></a>
+          <a class="nav-item" onclick="loadDynamicTopic('tech', '💻 Công nghệ')" style="cursor: pointer;"><span class="nav-icon">💻</span><span>Công nghệ</span></a>
+          <a class="nav-item" onclick="loadDynamicTopic('electronic', '📱 Thiết bị điện tử')" style="cursor: pointer;"><span class="nav-icon">📱</span><span>Thiết bị điện tử</span></a>
+          <a class="nav-item" onclick="loadDynamicTopic('travel', '✈️ Du lịch')" style="cursor: pointer;"><span class="nav-icon">✈️</span><span>Du lịch</span></a>
+          <a class="nav-item" onclick="loadDynamicTopic('shopping', '🛒 Mua sắm')" style="cursor: pointer;"><span class="nav-icon">🛒</span><span>Mua sắm</span></a>
+          <a class="nav-item" onclick="loadDynamicTopic('dessert', '🍰 Tráng miệng')" style="cursor: pointer;"><span class="nav-icon">🍰</span><span>Tráng miệng</span></a>
+          <a class="nav-item" onclick="loadDynamicTopic('cleaning', '🧹 Dọn dẹp')" style="cursor: pointer;"><span class="nav-icon">🧹</span><span>Dọn dẹp</span></a>
+          <a class="nav-item" onclick="loadDynamicTopic('game', '🎮 Trò chơi')" style="cursor: pointer;"><span class="nav-icon">🎮</span><span>Trò chơi</span></a>
+        </div>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-title">Trò chơi</div>
+        <a class="nav-item" onclick="startQuiz()" style="cursor: pointer;"><span class="nav-icon">❓</span><span>Quiz</span></a>
+        <a class="nav-item" onclick="startMatchGame()" style="cursor: pointer;"><span class="nav-icon">🧩</span><span>Ghép từ</span></a>
+        <a class="nav-item" onclick="startFlashcard()" style="cursor: pointer;"><span class="nav-icon">📇</span><span>Flashcard</span></a>
+        <a class="nav-item" onclick="startListenGame()" style="cursor: pointer;"><span class="nav-icon">🔊</span><span>Luyện nghe</span></a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-title">Tools</div>
+        <a class="nav-item ai-box" onclick="showUploadVocab()" style="cursor: pointer;"><span class="nav-icon">✨</span><span>Ảnh của bạn (AI)</span></a>
+        <a class="nav-item" onclick="showPage('Ggdich')" style="cursor: pointer;"><span class="nav-icon">🌐</span><span>Google dịch</span></a>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main-content">
+
+    <!-- Home Page -->
+    <div id="home" class="page active">
+      <section class="hero-card">
+        <div class="hero-left">
+          <div class="hero-badge">🌟 FUN & INTERACTIVE</div>
+
+          <h1 class="hero-title">
+            Learn English
+            <span>Step by Step</span>
+          </h1>
+
+          <p class="hero-text">
+            Learn English with images, listening practice, 
+            and fun interactive games.
+          </p>
+
+          <p class="hero-subtext">
+            Start your journey today and discover new words every day.
+          </p>
+
+          <div class="hero-features">
+            <span>📚 Vocabulary</span>
+            <span>🎧 Listening</span>
+            <span>🎮 Games</span>
+          </div>
+
+          <div class="hero-actions">
+            <button class="btn btn-primary" onclick="openTopicOverlay()">🚀 Start Learning</button>
+            <button class="btn btn-secondary" onclick="openGameOverlay()">🎮 Play Games</button>
+          </div>
+        </div>
+
+        <div class="hero-right">
+          <div class="hero-blob">
+            <div class="hero-image-box">📚</div>
+          </div>
+          <div style="width: 350px; z-index: 2; position: relative; text-align: center;">
+             <div style="font-family: 'Quicksand', sans-serif; font-weight: 800; color: #1f1f1f; margin-bottom: 10px; font-size: 18px; text-transform: uppercase; text-shadow: 1px 1px 0 #fff;">🎵 Chill Background Music</div>
+             <audio id="bg-music" controls loop style="width: 100%; border-radius: 16px; outline: none; box-shadow: 6px 6px 0px #1f1f1f; border: 4px solid #1f1f1f; height: 50px; background: #fff; transition: transform 0.2s;">
+               <source src="The Nights.mp3" type="audio/mpeg">
+             </audio>
+             <div id="lyrics-display" class="lyrics-display" style="display: none;"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+<!-- DYNAMIC TOPIC PAGE TEMPLATE -->
+<div id="vocab-dynamic" class="page">
+  <h1 class="page-title" id="dyn-page-title">📚 Chủ Đề</h1>
+  <div class="animal-api-container">
+    <div class="animal-selector">
+      <button class="animal-btn active" onclick="processDynSkip(); loadDynItem()" style="background-color: #ffd54f;">🎲 Gọi ngẫu nhiên</button>
+      <button class="animal-btn" onclick="processDynSkip(); loadDynMassReview()" style="background-color: #ffab91;">📝 Tổng ôn Chủ đề</button>
+    </div>
+    
+    <div id="dyn-blindfold-toggle-container" class="blindfold-toggle-container" style="display: flex; justify-content: center; align-items: center; margin: 15px 0;">
+       <label class="switch">
+          <input type="checkbox" id="dyn-blindfold-toggle" onchange="toggleDynBlindfold()">
+          <span class="slider round"></span>
+       </label>
+       <span style="font-family: 'Quicksand', sans-serif; font-size: 18px; font-weight: bold; margin-left: 10px;">Chế độ Nhớ Từ (Ẩn kết quả)</span>
+    </div>
+    
+    <div id="dyn-blindfold-scoreboard" style="display: none; justify-content: center; gap: 20px; font-family: 'Quicksand', sans-serif; font-weight: bold; font-size: 18px; margin-bottom: 20px; background: #fff; padding: 10px 20px; border: 3px solid #000; border-radius: 12px; box-shadow: 4px 4px 0px #222;">
+        <span style="color: #4caf50;">✅ Đúng: <span id="dyn-score-correct">0</span></span>
+        <span style="color: #f44336;">❌ Sai: <span id="dyn-score-incorrect">0</span></span>
+        <span style="color: #ff9800;">⏭️ Bỏ qua: <span id="dyn-score-skipped">0</span></span>
+    </div>
+    
+    <div class="animal-card" id="dyn-card" style="display:none;">
+      <div id="dyn-loading" class="image-loading" style="display:none;">
+        <div class="spinner"></div>
+      </div>
+      <img id="dyn-img" src="" alt="Image">
+      <div class="animal-info">
+        <div id="dyn-name-container">
+            <div class="animal-en" id="dyn-en">word</div>
+            <div class="animal-phonetic" id="dyn-phonetic" style="font-size: 20px; color: #555; font-style: italic; margin-bottom: 5px;"></div>
+        </div>
+        
+        <div id="dyn-guess-container" style="display: none; margin-bottom: 15px;">
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                <div style="display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px;">
+                   <input type="text" id="dyn-guess-input" placeholder="Nhập tên tiếng Anh..." style="padding: 10px; font-size: 18px; border: 3px solid #000; border-radius: 8px; width: 220px; font-family: 'Nunito'; text-align: center;" oninput="checkDynGuess(true)">
+                   <button class="vocab-audio-btn" onclick="checkDynGuess()" style="padding: 10px 15px; margin: 0; background-color: #a5d6a7;">Kiểm tra</button>
+                </div>
+                
+                <div style="display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px;">
+                   <button class="vocab-audio-btn" onclick="revealDynGuess()" style="padding: 8px 12px; margin: 0; font-size: 16px; background-color: #ef9a9a; color: #b71c1c;">👀 Xem đáp án</button>
+                   <div id="dyn-guess-result" style="font-weight: bold; font-family: 'Quicksand'; font-size: 18px; margin-left: 5px;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="animal-vi" id="dyn-vi">từ vựng</div>
+        
+        <!-- Persistent Write to Learn Box -->
+        <div id="dyn-persistent-write-box" style="margin-top: 15px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+            <div style="font-family: 'Quicksand'; font-size: 16px; font-weight: bold; color: #555;">✍️ Luyện viết tay:</div>
+            <input type="text" id="dyn-persistent-write-input" placeholder="Gõ lại tiếng Anh..." style="padding: 8px; font-size: 16px; border: 2px solid #000; border-radius: 6px; width: 180px; font-family: 'Nunito'; text-align: center;" oninput="checkDynPersistentWrite()">
+        </div>
+        
+        <div class="animal-actions" style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 15px;">
+           <button class="vocab-audio-btn" id="dyn-back-btn" onclick="loadPreviousDyn()" style="display: none; background-color: #e0e0e0; color: #333;">⬅️ Quay lại</button>
+           <button class="vocab-audio-btn" id="dyn-audio-btn" onclick="playAudio(document.getElementById('dyn-en').textContent)" style="background-color: #ffb74d;">🔊 Nghe</button>
+           <button class="animal-next-btn" id="dyn-next-btn" onclick="loadDynItem()" style="background-color: #29b6f6;">🔄 Next</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Mass Review Container with Pagination -->
+    <div id="dyn-mass-review-container" style="display: none; width: 100%; max-width: 1200px; margin: 0 auto; padding: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: white; padding: 15px; border: 3px solid black; border-radius: 12px; box-shadow: 4px 4px 0 #222; flex-wrap: wrap; gap: 10px;">
+            <h2 id="dyn-mass-title" style="font-family: 'Quicksand'; margin: 0; font-size: 24px;">📝 Bài Kiểm Tra</h2>
+            <div style="font-family: 'Quicksand'; font-size: 20px; font-weight: bold; display: flex; align-items: center; gap: 15px;">
+                <span style="color: #4caf50;">✅ Đúng: <span id="dyn-mass-review-correct">0</span>/<span id="dyn-mass-review-total">0</span></span>
+                <button onclick="finishDynMassReview()" style="padding: 8px 15px; background: #2196f3; color: white; border: 3px solid black; border-radius: 8px; font-weight: bold; cursor: pointer;">Nộp Bài</button>
+            </div>
+        </div>
+        
+        <div id="dyn-mass-review-loading" style="display: flex; justify-content: center; padding: 40px; font-family: 'Quicksand'; font-weight: bold; font-size: 20px;">
+            Đang tải dữ liệu trang... (Vui lòng đợi ⌛)
+        </div>
+        
+        <div id="dyn-mass-review-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px;">
+            <!-- Render items here via JS -->
+        </div>
+
+        <!-- Pagination Controls -->
+        <div id="dyn-pagination-controls" style="display: flex; justify-content: center; gap: 10px; margin-top: 30px;">
+            <button class="vocab-audio-btn" id="dyn-page-prev" onclick="prevDynPage()" style="background-color: #e0e0e0;">⬅️ Trang trước</button>
+            <span id="dyn-page-info" style="font-family: 'Quicksand'; font-size: 18px; font-weight: bold; display: flex; align-items: center; padding: 0 15px;">Trang 1 / 15</span>
+            <button class="animal-next-btn" id="dyn-page-next" onclick="nextDynPage()" style="background-color: #29b6f6;">Trang sau ➡️</button>
+        </div>
+    </div>
+    
+  </div>
+</div>
+
+<!-- Animal API Page -->
+<div id="vocab-animal" class="page">
+  <h1 class="page-title">🐶 Động vật (Khám phá)</h1>
+  <div class="animal-api-container">
+    <div class="animal-selector">
+      <button class="animal-btn active" onclick="processAnimalSkip(); loadCommonAnimal()" style="background-color: #ffd54f;">🌟 100 Quen thuộc</button>
+      <button class="animal-btn" onclick="processAnimalSkip(); loadRandomAnimal()" style="background-color: #bbdefb;">🎲 Bất kỳ (10.000+ loài)</button>
+      <button class="animal-btn" onclick="processAnimalSkip(); loadMassReview()" style="background-color: #ffab91;">📝 Tổng ôn 100 Q.Thuộc</button>
+    </div>
+    
+    <div id="blindfold-toggle-container" class="blindfold-toggle-container" style="display: flex; justify-content: center; align-items: center; margin: 15px 0;">
+       <label class="switch">
+          <input type="checkbox" id="blindfold-toggle" onchange="toggleBlindfold()">
+          <span class="slider round"></span>
+       </label>
+       <span style="font-family: 'Quicksand', sans-serif; font-size: 18px; font-weight: bold; margin-left: 10px;">Chế độ Nhớ Từ (Ẩn tên tiếng Anh)</span>
+    </div>
+    
+    <div id="blindfold-scoreboard" style="display: none; justify-content: center; gap: 20px; font-family: 'Quicksand', sans-serif; font-weight: bold; font-size: 18px; margin-bottom: 20px; background: #fff; padding: 10px 20px; border: 3px solid #000; border-radius: 12px; box-shadow: 4px 4px 0px #222;">
+        <span style="color: #4caf50;">✅ Đúng: <span id="score-correct">0</span></span>
+        <span style="color: #f44336;">❌ Sai: <span id="score-incorrect">0</span></span>
+        <span style="color: #ff9800;">⏭️ Bỏ qua: <span id="score-skipped">0</span></span>
+    </div>
+    
+    <div class="animal-card" id="animal-card" style="display:none;">
+      <div id="animal-loading" class="image-loading" style="display:none;">
+        <div class="spinner"></div>
+      </div>
+      <img id="animal-img" src="" alt="Animal Image">
+      <div class="animal-info">
+        <div id="animal-name-container">
+            <div class="animal-en" id="animal-en">dog</div>
+            <div class="animal-phonetic" id="animal-phonetic" style="font-size: 20px; color: #555; font-style: italic; margin-bottom: 5px;"></div>
+        </div>
+        
+        <div id="animal-guess-container" style="display: none; margin-bottom: 15px;">
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                <!-- Hàng 1: Ô nhập liệu và Kiểm tra -->
+                <div style="display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px;">
+                   <input type="text" id="animal-guess-input" placeholder="Nhập tên tiếng Anh..." style="padding: 10px; font-size: 18px; border: 3px solid #000; border-radius: 8px; width: 220px; font-family: 'Nunito'; text-align: center;" oninput="checkAnimalGuess(true)">
+                   <button class="vocab-audio-btn" onclick="checkAnimalGuess()" style="padding: 10px 15px; margin: 0; background-color: #a5d6a7;">Kiểm tra</button>
+                </div>
+                
+                <!-- Hàng 2: Xem đáp án và Báo kết quả -->
+                <div style="display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px;">
+                   <button class="vocab-audio-btn" onclick="revealAnimalGuess()" style="padding: 8px 12px; margin: 0; font-size: 16px; background-color: #ef9a9a; color: #b71c1c;">👀 Xem đáp án</button>
+                   <div id="animal-guess-result" style="font-weight: bold; font-family: 'Quicksand'; font-size: 18px; margin-left: 5px;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="animal-vi" id="animal-vi">con chó</div>
+        
+        <!-- Persistent Write to Learn Box -->
+        <div id="persistent-write-box" style="margin-top: 15px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+            <div style="font-family: 'Quicksand'; font-size: 16px; font-weight: bold; color: #555;">✍️ Luyện viết tay:</div>
+            <input type="text" id="persistent-write-input" placeholder="Gõ lại tiếng Anh..." style="padding: 8px; font-size: 16px; border: 2px solid #000; border-radius: 6px; width: 180px; font-family: 'Nunito'; text-align: center;" oninput="checkPersistentWrite()">
+        </div>
+        
+        <div class="animal-actions" style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 15px;">
+           <button class="vocab-audio-btn" id="animal-back-btn" onclick="loadPreviousAnimal()" style="display: none; background-color: #e0e0e0; color: #333;">⬅️ Quay lại</button>
+           <button class="vocab-audio-btn" id="animal-audio-btn" onclick="playAudio(document.getElementById('animal-en').textContent)" style="background-color: #ffb74d;">🔊 Nghe</button>
+           <button class="animal-next-btn" id="animal-next-btn" onclick="loadCurrentAnimal()" style="background-color: #29b6f6;">🔄 Next</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Mass Review Container -->
+    <div id="mass-review-container" style="display: none; width: 100%; max-width: 1200px; margin: 0 auto; padding: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: white; padding: 15px; border: 3px solid black; border-radius: 12px; box-shadow: 4px 4px 0 #222;">
+            <h2 style="font-family: 'Quicksand'; margin: 0; font-size: 24px;">📝 Bài Kiểm Tra: 100 Động Vật Quen Thuộc</h2>
+            <div style="font-family: 'Quicksand'; font-size: 20px; font-weight: bold; display: flex; gap: 15px;">
+                <span style="color: #4caf50;">✅ Đúng: <span id="mass-review-correct">0</span>/100</span>
+                <button onclick="finishMassReview()" style="padding: 8px 15px; background: #2196f3; color: white; border: 3px solid black; border-radius: 8px; font-weight: bold; cursor: pointer;">Nộp Bài</button>
+            </div>
+        </div>
+        
+        <div id="mass-review-loading" style="display: flex; justify-content: center; padding: 40px; font-family: 'Quicksand'; font-weight: bold; font-size: 20px;">
+            Đang tải 100 hình ảnh động vật... (Vui lòng đợi ⌛)
+        </div>
+        
+        <div id="mass-review-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px;">
+            <!-- Render items here via JS -->
+        </div>
+    </div>
+    
+  </div>
+</div>
+
+<!-- Vehicle API Page -->
+<div id="vocab-vehicle" class="page">
+  <h1 class="page-title">🚗 Phương tiện (Khám phá)</h1>
+  <div class="animal-api-container">
+    <div class="animal-selector">
+      <button class="animal-btn active" onclick="processVehicleSkip(); loadCommonVehicle()" style="background-color: #ffd54f;">🚕 Gọi ngẫu nhiên</button>
+      <button class="animal-btn" onclick="processVehicleSkip(); loadVehicleMassReview()" style="background-color: #ffab91;">📝 Tổng ôn Phương tiện</button>
+    </div>
+    
+    <div id="vehicle-blindfold-toggle-container" class="blindfold-toggle-container" style="display: flex; justify-content: center; align-items: center; margin: 15px 0;">
+       <label class="switch">
+          <input type="checkbox" id="vehicle-blindfold-toggle" onchange="toggleVehicleBlindfold()">
+          <span class="slider round"></span>
+       </label>
+       <span style="font-family: 'Quicksand', sans-serif; font-size: 18px; font-weight: bold; margin-left: 10px;">Chế độ Nhớ Từ (Ẩn kết quả)</span>
+    </div>
+    
+    <div id="vehicle-blindfold-scoreboard" style="display: none; justify-content: center; gap: 20px; font-family: 'Quicksand', sans-serif; font-weight: bold; font-size: 18px; margin-bottom: 20px; background: #fff; padding: 10px 20px; border: 3px solid #000; border-radius: 12px; box-shadow: 4px 4px 0px #222;">
+        <span style="color: #4caf50;">✅ Đúng: <span id="v-score-correct">0</span></span>
+        <span style="color: #f44336;">❌ Sai: <span id="v-score-incorrect">0</span></span>
+        <span style="color: #ff9800;">⏭️ Bỏ qua: <span id="v-score-skipped">0</span></span>
+    </div>
+    
+    <div class="animal-card" id="vehicle-card" style="display:none;">
+      <div id="vehicle-loading" class="image-loading" style="display:none;">
+        <div class="spinner"></div>
+      </div>
+      <img id="vehicle-img" src="" alt="Vehicle Image">
+      <div class="animal-info">
+        <div id="vehicle-name-container">
+            <div class="animal-en" id="vehicle-en">car</div>
+            <div class="animal-phonetic" id="vehicle-phonetic" style="font-size: 20px; color: #555; font-style: italic; margin-bottom: 5px;"></div>
+        </div>
+        
+        <div id="vehicle-guess-container" style="display: none; margin-bottom: 15px;">
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                <div style="display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px;">
+                   <input type="text" id="vehicle-guess-input" placeholder="Nhập tên tiếng Anh..." style="padding: 10px; font-size: 18px; border: 3px solid #000; border-radius: 8px; width: 220px; font-family: 'Nunito'; text-align: center;" oninput="checkVehicleGuess(true)">
+                   <button class="vocab-audio-btn" onclick="checkVehicleGuess()" style="padding: 10px 15px; margin: 0; background-color: #a5d6a7;">Kiểm tra</button>
+                </div>
+                
+                <div style="display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px;">
+                   <button class="vocab-audio-btn" onclick="revealVehicleGuess()" style="padding: 8px 12px; margin: 0; font-size: 16px; background-color: #ef9a9a; color: #b71c1c;">👀 Xem đáp án</button>
+                   <div id="vehicle-guess-result" style="font-weight: bold; font-family: 'Quicksand'; font-size: 18px; margin-left: 5px;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="animal-vi" id="vehicle-vi">xe hơi</div>
+        
+        <!-- Persistent Write to Learn Box -->
+        <div id="vehicle-persistent-write-box" style="margin-top: 15px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+            <div style="font-family: 'Quicksand'; font-size: 16px; font-weight: bold; color: #555;">✍️ Luyện viết tay:</div>
+            <input type="text" id="vehicle-persistent-write-input" placeholder="Gõ lại tiếng Anh..." style="padding: 8px; font-size: 16px; border: 2px solid #000; border-radius: 6px; width: 180px; font-family: 'Nunito'; text-align: center;" oninput="checkVehiclePersistentWrite()">
+        </div>
+        
+        <div class="animal-actions" style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 15px;">
+           <button class="vocab-audio-btn" id="vehicle-back-btn" onclick="loadPreviousVehicle()" style="display: none; background-color: #e0e0e0; color: #333;">⬅️ Quay lại</button>
+           <button class="vocab-audio-btn" id="vehicle-audio-btn" onclick="playAudio(document.getElementById('vehicle-en').textContent)" style="background-color: #ffb74d;">🔊 Nghe</button>
+           <button class="animal-next-btn" id="vehicle-next-btn" onclick="loadCommonVehicle()" style="background-color: #29b6f6;">🔄 Next</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Mass Review Container -->
+    <div id="vehicle-mass-review-container" style="display: none; width: 100%; max-width: 1200px; margin: 0 auto; padding: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: white; padding: 15px; border: 3px solid black; border-radius: 12px; box-shadow: 4px 4px 0 #222;">
+            <h2 style="font-family: 'Quicksand'; margin: 0; font-size: 24px;">📝 Bài Kiểm Tra: 15 Phương Tiện Giao Thông</h2>
+            <div style="font-family: 'Quicksand'; font-size: 20px; font-weight: bold; display: flex; gap: 15px;">
+                <span style="color: #4caf50;">✅ Đúng: <span id="v-mass-review-correct">0</span>/15</span>
+                <button onclick="finishVehicleMassReview()" style="padding: 8px 15px; background: #2196f3; color: white; border: 3px solid black; border-radius: 8px; font-weight: bold; cursor: pointer;">Nộp Bài</button>
+            </div>
+        </div>
+        
+        <div id="v-mass-review-loading" style="display: flex; justify-content: center; padding: 40px; font-family: 'Quicksand'; font-weight: bold; font-size: 20px;">
+            Đang tải hình ảnh phương tiện... (Vui lòng đợi ⌛)
+        </div>
+        
+        <div id="v-mass-review-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px;">
+            <!-- Render items here via JS -->
+        </div>
+    </div>
+    
+  </div>
+</div>
+
+<!-- Food API Page -->
+<div id="vocab-food" class="page">
+  <h1 class="page-title">🍎 Đồ ăn (Khám phá)</h1>
+  <div class="animal-api-container">
+    <div class="animal-selector">
+      <button class="animal-btn active" onclick="processFoodSkip(); loadCommonFood()" style="background-color: #ffd54f;">🍽️ Gọi ngẫu nhiên</button>
+      <button class="animal-btn" onclick="processFoodSkip(); loadFoodMassReview()" style="background-color: #ffab91;">📝 Tổng ôn Đồ ăn</button>
+    </div>
+    
+    <div id="food-blindfold-toggle-container" class="blindfold-toggle-container" style="display: flex; justify-content: center; align-items: center; margin: 15px 0;">
+       <label class="switch">
+          <input type="checkbox" id="food-blindfold-toggle" onchange="toggleFoodBlindfold()">
+          <span class="slider round"></span>
+       </label>
+       <span style="font-family: 'Quicksand', sans-serif; font-size: 18px; font-weight: bold; margin-left: 10px;">Chế độ Nhớ Từ (Ẩn kết quả)</span>
+    </div>
+    
+    <div id="food-blindfold-scoreboard" style="display: none; justify-content: center; gap: 20px; font-family: 'Quicksand', sans-serif; font-weight: bold; font-size: 18px; margin-bottom: 20px; background: #fff; padding: 10px 20px; border: 3px solid #000; border-radius: 12px; box-shadow: 4px 4px 0px #222;">
+        <span style="color: #4caf50;">✅ Đúng: <span id="f-score-correct">0</span></span>
+        <span style="color: #f44336;">❌ Sai: <span id="f-score-incorrect">0</span></span>
+        <span style="color: #ff9800;">⏭️ Bỏ qua: <span id="f-score-skipped">0</span></span>
+    </div>
+    
+    <div class="animal-card" id="food-card" style="display:none;">
+      <div id="food-loading" class="image-loading" style="display:none;">
+        <div class="spinner"></div>
+      </div>
+      <img id="food-img" src="" alt="Food Image">
+      <div class="animal-info">
+        <div id="food-name-container">
+            <div class="animal-en" id="food-en">apple</div>
+            <div class="animal-phonetic" id="food-phonetic" style="font-size: 20px; color: #555; font-style: italic; margin-bottom: 5px;"></div>
+        </div>
+        
+        <div id="food-guess-container" style="display: none; margin-bottom: 15px;">
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                <div style="display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px;">
+                   <input type="text" id="food-guess-input" placeholder="Nhập tên tiếng Anh..." style="padding: 10px; font-size: 18px; border: 3px solid #000; border-radius: 8px; width: 220px; font-family: 'Nunito'; text-align: center;" oninput="checkFoodGuess(true)">
+                   <button class="vocab-audio-btn" onclick="checkFoodGuess()" style="padding: 10px 15px; margin: 0; background-color: #a5d6a7;">Kiểm tra</button>
+                </div>
+                
+                <div style="display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px;">
+                   <button class="vocab-audio-btn" onclick="revealFoodGuess()" style="padding: 8px 12px; margin: 0; font-size: 16px; background-color: #ef9a9a; color: #b71c1c;">👀 Xem đáp án</button>
+                   <div id="food-guess-result" style="font-weight: bold; font-family: 'Quicksand'; font-size: 18px; margin-left: 5px;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="animal-vi" id="food-vi">táo</div>
+        
+        <!-- Persistent Write to Learn Box -->
+        <div id="food-persistent-write-box" style="margin-top: 15px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+            <div style="font-family: 'Quicksand'; font-size: 16px; font-weight: bold; color: #555;">✍️ Luyện viết tay:</div>
+            <input type="text" id="food-persistent-write-input" placeholder="Gõ lại tiếng Anh..." style="padding: 8px; font-size: 16px; border: 2px solid #000; border-radius: 6px; width: 180px; font-family: 'Nunito'; text-align: center;" oninput="checkFoodPersistentWrite()">
+        </div>
+        
+        <div class="animal-actions" style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 15px;">
+           <button class="vocab-audio-btn" id="food-back-btn" onclick="loadPreviousFood()" style="display: none; background-color: #e0e0e0; color: #333;">⬅️ Quay lại</button>
+           <button class="vocab-audio-btn" id="food-audio-btn" onclick="playAudio(document.getElementById('food-en').textContent)" style="background-color: #ffb74d;">🔊 Nghe</button>
+           <button class="animal-next-btn" id="food-next-btn" onclick="loadCommonFood()" style="background-color: #29b6f6;">🔄 Next</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Mass Review Container -->
+    <div id="food-mass-review-container" style="display: none; width: 100%; max-width: 1200px; margin: 0 auto; padding: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: white; padding: 15px; border: 3px solid black; border-radius: 12px; box-shadow: 4px 4px 0 #222;">
+            <h2 style="font-family: 'Quicksand'; margin: 0; font-size: 24px;">📝 Bài Kiểm Tra: 15 Món Ăn Quen Thuộc</h2>
+            <div style="font-family: 'Quicksand'; font-size: 20px; font-weight: bold; display: flex; gap: 15px;">
+                <span style="color: #4caf50;">✅ Đúng: <span id="f-mass-review-correct">0</span>/15</span>
+                <button onclick="finishFoodMassReview()" style="padding: 8px 15px; background: #2196f3; color: white; border: 3px solid black; border-radius: 8px; font-weight: bold; cursor: pointer;">Nộp Bài</button>
+            </div>
+        </div>
+        
+        <div id="f-mass-review-loading" style="display: flex; justify-content: center; padding: 40px; font-family: 'Quicksand'; font-weight: bold; font-size: 20px;">
+            Đang tải hình ảnh món ăn... (Vui lòng đợi ⌛)
+        </div>
+        
+        <div id="f-mass-review-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px;">
+            <!-- Render items here via JS -->
+        </div>
+    </div>
+    
+  </div>
+</div>
+
+<!-- Body Parts API Page -->
+<div id="vocab-body" class="page">
+  <h1 class="page-title">👤 Cơ thể (Khám phá)</h1>
+  <div class="animal-api-container">
+    <div class="animal-selector">
+      <button class="animal-btn active" onclick="processBodySkip(); loadCommonBody()" style="background-color: #ffd54f;">🦵 Gọi ngẫu nhiên</button>
+      <button class="animal-btn" onclick="processBodySkip(); loadBodyMassReview()" style="background-color: #ffab91;">📝 Tổng ôn Cơ thể</button>
+    </div>
+    
+    <div id="body-blindfold-toggle-container" class="blindfold-toggle-container" style="display: flex; justify-content: center; align-items: center; margin: 15px 0;">
+       <label class="switch">
+          <input type="checkbox" id="body-blindfold-toggle" onchange="toggleBodyBlindfold()">
+          <span class="slider round"></span>
+       </label>
+       <span style="font-family: 'Quicksand', sans-serif; font-size: 18px; font-weight: bold; margin-left: 10px;">Chế độ Nhớ Từ (Ẩn kết quả)</span>
+    </div>
+    
+    <div id="body-blindfold-scoreboard" style="display: none; justify-content: center; gap: 20px; font-family: 'Quicksand', sans-serif; font-weight: bold; font-size: 18px; margin-bottom: 20px; background: #fff; padding: 10px 20px; border: 3px solid #000; border-radius: 12px; box-shadow: 4px 4px 0px #222;">
+        <span style="color: #4caf50;">✅ Đúng: <span id="b-score-correct">0</span></span>
+        <span style="color: #f44336;">❌ Sai: <span id="b-score-incorrect">0</span></span>
+        <span style="color: #ff9800;">⏭️ Bỏ qua: <span id="b-score-skipped">0</span></span>
+    </div>
+    
+    <div class="animal-card" id="body-card" style="display:none;">
+      <div id="body-loading" class="image-loading" style="display:none;">
+        <div class="spinner"></div>
+      </div>
+      <img id="body-img" src="" alt="Body Image">
+      <div class="animal-info">
+        <div id="body-name-container">
+            <div class="animal-en" id="body-en">hand</div>
+            <div class="animal-phonetic" id="body-phonetic" style="font-size: 20px; color: #555; font-style: italic; margin-bottom: 5px;"></div>
+        </div>
+        
+        <div id="body-guess-container" style="display: none; margin-bottom: 15px;">
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                <div style="display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px;">
+                   <input type="text" id="body-guess-input" placeholder="Nhập tên tiếng Anh..." style="padding: 10px; font-size: 18px; border: 3px solid #000; border-radius: 8px; width: 220px; font-family: 'Nunito'; text-align: center;" oninput="checkBodyGuess(true)">
+                   <button class="vocab-audio-btn" onclick="checkBodyGuess()" style="padding: 10px 15px; margin: 0; background-color: #a5d6a7;">Kiểm tra</button>
+                </div>
+                
+                <div style="display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px;">
+                   <button class="vocab-audio-btn" onclick="revealBodyGuess()" style="padding: 8px 12px; margin: 0; font-size: 16px; background-color: #ef9a9a; color: #b71c1c;">👀 Xem đáp án</button>
+                   <div id="body-guess-result" style="font-weight: bold; font-family: 'Quicksand'; font-size: 18px; margin-left: 5px;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="animal-vi" id="body-vi">bàn tay</div>
+        
+        <!-- Persistent Write to Learn Box -->
+        <div id="body-persistent-write-box" style="margin-top: 15px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+            <div style="font-family: 'Quicksand'; font-size: 16px; font-weight: bold; color: #555;">✍️ Luyện viết tay:</div>
+            <input type="text" id="body-persistent-write-input" placeholder="Gõ lại tiếng Anh..." style="padding: 8px; font-size: 16px; border: 2px solid #000; border-radius: 6px; width: 180px; font-family: 'Nunito'; text-align: center;" oninput="checkBodyPersistentWrite()">
+        </div>
+        
+        <div class="animal-actions" style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 15px;">
+           <button class="vocab-audio-btn" id="body-back-btn" onclick="loadPreviousBody()" style="display: none; background-color: #e0e0e0; color: #333;">⬅️ Quay lại</button>
+           <button class="vocab-audio-btn" id="body-audio-btn" onclick="playAudio(document.getElementById('body-en').textContent)" style="background-color: #ffb74d;">🔊 Nghe</button>
+           <button class="animal-next-btn" id="body-next-btn" onclick="loadCommonBody()" style="background-color: #29b6f6;">🔄 Next</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Mass Review Container -->
+    <div id="body-mass-review-container" style="display: none; width: 100%; max-width: 1200px; margin: 0 auto; padding: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: white; padding: 15px; border: 3px solid black; border-radius: 12px; box-shadow: 4px 4px 0 #222;">
+            <h2 style="font-family: 'Quicksand'; margin: 0; font-size: 24px;">📝 Bài Kiểm Tra: 15 Bộ Phận Cơ Thể</h2>
+            <div style="font-family: 'Quicksand'; font-size: 20px; font-weight: bold; display: flex; gap: 15px;">
+                <span style="color: #4caf50;">✅ Đúng: <span id="b-mass-review-correct">0</span>/15</span>
+                <button onclick="finishBodyMassReview()" style="padding: 8px 15px; background: #2196f3; color: white; border: 3px solid black; border-radius: 8px; font-weight: bold; cursor: pointer;">Nộp Bài</button>
+            </div>
+        </div>
+        
+        <div id="b-mass-review-loading" style="display: flex; justify-content: center; padding: 40px; font-family: 'Quicksand'; font-weight: bold; font-size: 20px;">
+            Đang tải hình ảnh cơ thể... (Vui lòng đợi ⌛)
+        </div>
+        
+        <div id="b-mass-review-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px;">
+            <!-- Render items here via JS -->
+        </div>
+    </div>
+    
+  </div>
+</div>
+
+<!-- Upload Image AI Page -->
+<div id="vocab-upload" class="page">
+  <h1 class="page-title">✨ AI Phân tích hình ảnh</h1>
+  <div class="upload-container">
+    <div class="upload-box" onclick="document.getElementById('image-upload').click()">
+      <span style="font-size: 50px;">📂</span><br>
+      Nhấn để tải một bức ảnh lên
+    </div>
+    <input type="file" id="image-upload" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
+    
+    <div class="image-preview-container" style="display: none;" id="preview-container">
+      <img id="image-preview" src="" alt="Preview">
+      <div id="image-loading" class="image-loading">
+        <div class="spinner"></div>
+        <p>AI đang quét hình ảnh để tìm từ vựng...</p>
+      </div>
+      <div id="upload-hotspots"></div>
+    </div>
+    
+    <div id="detected-vocab-list" style="width: 100%;"></div>
+  </div>
+</div>
+
+<!-- Vocabulary Learn Page (Shared container for all topics) -->
+<div id="vocab-learn" class="page">
+  <h1 id="vocab-title" class="page-title">Học Từ Vựng</h1>
+  <div class="vocab-container" id="vocab-container">
+    <!-- Hotspot Images will go here -->
+  </div>
+</div>
+
+<!-- Quiz Game Page -->
+<div id="game-quiz" class="page">
+  <h1 class="page-title">Trò chơi: Đoán từ</h1>
+  <div class="game-container" id="quiz-container">
+    <!-- Quiz logic here -->
+  </div>
+</div>
+
+<!-- Drag & Drop Match Page -->
+<div id="game-match" class="page">
+  <h1 class="page-title">Trò chơi: Ghép từ</h1>
+  <div class="game-container" id="match-container">
+    <!-- Match logic here -->
+  </div>
+</div>
+
+<!-- Flashcard Page -->
+<div id="game-flashcard" class="page">
+  <h1 class="page-title">Trò chơi: Flashcard</h1>
+  <div class="game-container" id="flashcard-container">
+    <!-- Flashcard logic here -->
+  </div>
+</div>
+
+<!-- Listening Game Page -->
+<div id="game-listen" class="page">
+  <h1 class="page-title">Trò chơi: Luyện nghe 🔊</h1>
+  <div class="game-container" id="listen-container">
+    <!-- Listen logic here -->
+  </div>
+</div>
+
+<div id="Ggdich" class="page">
+<h1>Google dịch</h1>
+<div class="translate-container">
+  <div class="translate-box">
+    <select id="source-lang">
+      <option value="en">Tiếng Anh</option>
+      <option value="vi">Tiếng Việt</option>
+      <option value="ja">Tiếng Nhật</option>
+      <option value="ko">Tiếng Hàn</option>
+      <option value="zh">Tiếng Trung</option>
+      <option value="fr">Tiếng Pháp</option>
+    </select>
+    <textarea id="source-text" placeholder="Nhập văn bản..."></textarea>
+  </div>
+  <div class="translate-controls">
+    <button onclick="swapLang()" class="swap-btn">⇅ Đổi</button>
+    <button onclick="translateText()" class="translate-btn">Dịch</button>
+  </div>
+  <div class="translate-box">
+    <select id="target-lang">
+      <option value="vi">Tiếng Việt</option>
+      <option value="en">Tiếng Anh</option>
+      <option value="ja">Tiếng Nhật</option>
+      <option value="ko">Tiếng Hàn</option>
+      <option value="zh">Tiếng Trung</option>
+      <option value="fr">Tiếng Pháp</option>
+    </select>
+    <textarea id="target-text" placeholder="Bản dịch..." readonly></textarea>
+  </div>
+</div>
+
+<!-- Nơi hiển thị kết quả chi tiết (Dictionary) -->
+<div id="dictionary-container" class="dictionary-container" style="display: none;">
+  <div class="dict-header">
+     <h2 id="dict-word"></h2>
+     <div id="dict-phonetic" class="dict-phonetic" style="font-size: 20px; color: #555; font-family: 'Nunito', sans-serif; font-style: italic; margin-bottom: 15px;"></div>
+     <div id="dict-main-pos" class="dict-main-pos">
+        <!-- Main tags will go here -->
+     </div>
+  </div>
+  <div class="dict-other-translations">
+     <div class="dict-other-header">
+       <h3>Bản dịch khác</h3>
+     </div>
+     <table class="dict-table">
+        <tbody id="dict-table-body">
+            <!-- Rows will be injected here -->
+        </tbody>
+     </table>
+  </div>
+</div>
+
+
+
+</div>
+
+<!-- Topic Selection Overlay -->
+<div id="topic-overlay" class="topic-overlay" style="display: none;">
+  <div class="topic-overlay-content">
+    <button class="close-overlay-btn" onclick="closeTopicOverlay()">✖</button>
+    <h2 class="overlay-title">🌟 Chọn một chủ đề để học</h2>
+    <div class="topic-grid">
+      <div class="topic-card" onclick="showBodyVocab(); closeTopicOverlay()">
+        <div class="topic-icon">👤</div>
+        <div class="topic-name">Cơ thể</div>
+      </div>
+      <div class="topic-card" onclick="showAnimalVocab(); closeTopicOverlay()">
+        <div class="topic-icon">🐶</div>
+        <div class="topic-name">Động vật</div>
+      </div>
+      <div class="topic-card" onclick="loadDynamicTopic('food', '🍎 Đồ ăn'); closeTopicOverlay()">
+        <div class="topic-icon">🍎</div>
+        <div class="topic-name">Đồ ăn</div>
+      </div>
+      <div class="topic-card" onclick="loadDynamicTopic('vehicle', '🚗 Phương tiện'); closeTopicOverlay()">
+        <div class="topic-icon">🚗</div>
+        <div class="topic-name">Phương tiện</div>
+      </div>
+      <div class="topic-card" onclick="loadDynamicTopic('house', '🏠 Đồ vật trong nhà'); closeTopicOverlay()">
+        <div class="topic-icon">🏠</div>
+        <div class="topic-name">Nhà cửa</div>
+      </div>
+      <div class="topic-card" onclick="loadDynamicTopic('school', '🎒 Trường học'); closeTopicOverlay()">
+        <div class="topic-icon">🎒</div>
+        <div class="topic-name">Trường học</div>
+      </div>
+      <div class="topic-card" onclick="loadDynamicTopic('family', '👨‍👩‍👧‍👦 Gia đình'); closeTopicOverlay()">
+        <div class="topic-icon">👨‍👩‍👧‍👦</div>
+        <div class="topic-name">Gia đình</div>
+      </div>
+      <div class="topic-card" onclick="loadDynamicTopic('clothes', '👕 Quần áo'); closeTopicOverlay()">
+        <div class="topic-icon">👕</div>
+        <div class="topic-name">Quần áo</div>
+      </div>
+      <div class="topic-card" onclick="loadDynamicTopic('color', '🎨 Màu sắc'); closeTopicOverlay()">
+        <div class="topic-icon">🎨</div>
+        <div class="topic-name">Màu sắc</div>
+      </div>
+      <div class="topic-card" onclick="loadDynamicTopic('time', '⏳ Thời gian'); closeTopicOverlay()">
+        <div class="topic-icon">⏳</div>
+        <div class="topic-name">Thời gian</div>
+      </div>
+      <div class="topic-card" onclick="loadDynamicTopic('weather', '☀️ Thời tiết'); closeTopicOverlay()">
+        <div class="topic-icon">☀️</div>
+        <div class="topic-name">Thời tiết</div>
+      </div>
+      <div class="topic-card" onclick="loadDynamicTopic('nature', '🌲 Thiên nhiên'); closeTopicOverlay()">
+        <div class="topic-icon">🌲</div>
+        <div class="topic-name">Thiên nhiên</div>
+      </div>
+      <div class="topic-card" onclick="loadDynamicTopic('city', '🏙️ Thành phố'); closeTopicOverlay()">
+        <div class="topic-icon">🏙️</div>
+        <div class="topic-name">Thành phố</div>
+      </div>
+      <div class="topic-card" onclick="loadDynamicTopic('job', '👷 Nghề nghiệp'); closeTopicOverlay()">
+        <div class="topic-icon">👷</div>
+        <div class="topic-name">Nghề nghiệp</div>
+      </div>
+      <div class="topic-card" onclick="loadDynamicTopic('sport', '⚽ Thể thao'); closeTopicOverlay()">
+        <div class="topic-icon">⚽</div>
+        <div class="topic-name">Thể thao</div>
+      </div>
+      <div class="topic-card" onclick="loadDynamicTopic('music', '🎵 Âm nhạc'); closeTopicOverlay()">
+        <div class="topic-icon">🎵</div>
+        <div class="topic-name">Âm nhạc</div>
+      </div>
+      <div class="topic-card" onclick="loadDynamicTopic('travel', '✈️ Du lịch'); closeTopicOverlay()">
+        <div class="topic-icon">✈️</div>
+        <div class="topic-name">Du lịch</div>
+      </div>
+      <div class="topic-card" onclick="loadDynamicTopic('game', '🎮 Trò chơi'); closeTopicOverlay()">
+        <div class="topic-icon">🎮</div>
+        <div class="topic-name">Trò chơi</div>
+      </div>
+      <div class="topic-card" onclick="showUploadVocab(); closeTopicOverlay()" style="background-color: #ffdbf5; border-color: #ab47bc;">
+        <div class="topic-icon">✨</div>
+        <div class="topic-name">Ảnh AI</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Game Selection Overlay -->
+<div id="game-overlay" class="topic-overlay" style="display: none;">
+  <div class="topic-overlay-content" style="max-width: 600px;">
+    <button class="close-overlay-btn" onclick="closeGameOverlay()">✖</button>
+    <h2 class="overlay-title">🎮 Nghỉ ngơi & Giải trí</h2>
+    <div class="topic-grid">
+      <div class="topic-card" onclick="startQuiz(); closeGameOverlay()" style="background-color: #e1bee7; border-color: #ab47bc;">
+        <div class="topic-icon">❓</div>
+        <div class="topic-name">Đoán từ</div>
+      </div>
+      <div class="topic-card" onclick="startMatchGame(); closeGameOverlay()" style="background-color: #c8e6c9; border-color: #388e3c;">
+        <div class="topic-icon">🧩</div>
+        <div class="topic-name">Ghép từ</div>
+      </div>
+      <div class="topic-card" onclick="startFlashcard(); closeGameOverlay()" style="background-color: #ffccbc; border-color: #ff5722;">
+        <div class="topic-icon">🎴</div>
+        <div class="topic-name">Flashcard</div>
+      </div>
+      <div class="topic-card" onclick="startListenGame(); closeGameOverlay()" style="background-color: #bbdefb; border-color: #1976d2;">
+        <div class="topic-icon">🔊</div>
+        <div class="topic-name">Luyện nghe</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
