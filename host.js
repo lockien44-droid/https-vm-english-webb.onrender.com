@@ -4,8 +4,22 @@ const path = require('path');
 
 const PORT = process.env.PORT || 3000;
 const DIR = __dirname;
-const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent';
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
+const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
+const DEFAULT_GEMINI_MODELS = [
+    'gemini-2.0-flash',
+    'gemini-1.5-flash-8b',
+    'gemini-flash-latest'
+];
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function getGeminiModels() {
+    const custom = (process.env.GEMINI_MODELS || '').split(',').map(m => m.trim()).filter(Boolean);
+    return custom.length ? custom : DEFAULT_GEMINI_MODELS;
+}
 
 function parseKeys(envName) {
     const raw = process.env[envName] || '';
@@ -71,8 +85,8 @@ async function callOpenAI(apiKey, prompt) {
     return text;
 }
 
-async function callGemini(apiKey, prompt) {
-    const response = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
+async function callGeminiOnce(apiKey, model, prompt) {
+    const response = await fetch(`${GEMINI_BASE}/${model}:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -81,12 +95,47 @@ async function callGemini(apiKey, prompt) {
         })
     });
     const data = await response.json();
+    const code = data?.error?.code;
+    const msg = data?.error?.message || `HTTP ${response.status}`;
+
     if (!response.ok) {
-        throw new Error(data?.error?.message || `HTTP ${response.status}`);
+        const err = new Error(msg);
+        err.code = code;
+        err.model = model;
+        throw err;
     }
+
     const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!text) throw new Error('Gemini returned empty content');
     return text;
+}
+
+async function callGemini(apiKey, prompt) {
+    const models = getGeminiModels();
+    const errors = [];
+
+    for (const model of models) {
+        for (let attempt = 0; attempt < 3; attempt++) {
+            try {
+                const text = await callGeminiOnce(apiKey, model, prompt);
+                console.log(`Gemini OK: ${model} (attempt ${attempt + 1})`);
+                return text;
+            } catch (e) {
+                const retryable = e.code === 503 || e.code === 429;
+                const waitMs = (attempt + 1) * 2000;
+                errors.push(`${model}: ${e.message}`);
+
+                if (retryable && attempt < 2) {
+                    console.warn(`Gemini ${model} retry ${attempt + 1} after ${waitMs}ms: ${e.message}`);
+                    await sleep(waitMs);
+                    continue;
+                }
+                break;
+            }
+        }
+    }
+
+    throw new Error(errors[errors.length - 1] || 'Gemini failed on all models');
 }
 
 async function tryProvider(name, keys, callFn, prompt) {
@@ -128,8 +177,9 @@ async function handleAiApi(req, res) {
     if (provider === 'openai') order.push('openai');
     else if (provider === 'gemini') order.push('gemini');
     else {
-        if (openaiKeys.length) order.push('openai');
+        // Ưu tiên Gemini nếu có — tránh OpenAI hết quota chặn trước
         if (geminiKeys.length) order.push('gemini');
+        if (openaiKeys.length) order.push('openai');
     }
 
     if (order.length === 0) {
