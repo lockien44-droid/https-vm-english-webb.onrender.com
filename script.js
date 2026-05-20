@@ -6783,16 +6783,6 @@ function closeAITopicGenerator() {
 
 async function generateTopicWithAI() {
     const topicInput = document.getElementById('ai-topic-input').value.trim();
-    const apiKeys = [
-        'AIzaSyCeVLUvAyCVoMGta00as_iN9vwPO8edAto',
-        'AIzaSyAufZUfJpHTg8g_mFTW6wBwyFbqN-kov5Y',
-        'AIzaSyA_vxMj86UnCuIh1r8k4q1stSZes_SyMzM',
-        'AIzaSyCJnCZ8cmowwDoucn47xg3quehLSIfgizc',
-        'AIzaSyADN0D7P1yND1GA6JNwYgbCNtTn5nNlwE4',
-        'AIzaSyD9BhZCF7p58kGum1g5x2O-3d4esrKI5zM',
-        'AIzaSyBy53iJYSBSJbWameVFiQJYDBBjGOIdke4',
-        'AIzaSyC8nAXbLlZtTrBzvxqn7t07uTJb0KGfH5Y'
-    ];
     
     if (!topicInput) {
         alert("Vui lòng nhập chủ đề bạn muốn học (Ví dụ: Đồ dùng học tập).");
@@ -6810,56 +6800,16 @@ async function generateTopicWithAI() {
     try {
         const prompt = `Tạo một danh sách 100 từ vựng tiếng Anh thuộc chủ đề: "${topicInput}". Trả về CHỈ một mảng JSON hợp lệ theo định dạng chính xác sau (không markdown, không giải thích): [{"en": "word1", "vi": "nghĩa 1", "emoji": "🌍"}, {"en": "word2", "vi": "nghĩa 2", "emoji": "🚗"}]`;
         
-        let response = null;
-        let lastErrorMsg = '';
+        const response = await fetch('/api/gemini', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt })
+        });
 
-        for (let i = 0; i < apiKeys.length; i++) {
-            const currentKey = apiKeys[i];
-            try {
-                response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${currentKey}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        contents: [{
-                            parts: [{
-                                text: prompt
-                            }]
-                        }],
-                        generationConfig: {
-                            temperature: 0.7,
-                        }
-                    })
-                });
-
-                if (response.ok) {
-                    break; // Success, exit loop
-                } else {
-                    // Try to extract error but continue to next key
-                    try {
-                        const errorData = await response.json();
-                        if (errorData.error && errorData.error.message) {
-                            lastErrorMsg = errorData.error.message;
-                        } else {
-                            lastErrorMsg = `HTTP ${response.status}`;
-                        }
-                    } catch(e) {
-                         lastErrorMsg = `HTTP ${response.status}`;
-                    }
-                    console.warn(`Key API ${i+1} thất bại: ${lastErrorMsg}`);
-                    response = null; // Reset response so we don't process a failed one
-                }
-            } catch(e) {
-                console.warn(`Lỗi mạng khi dùng Key API ${i+1}:`, e);
-            }
-        }
-        
-        if (!response || !response.ok) {
-            throw new Error(`Đã thử toàn bộ ${apiKeys.length} API Keys nhưng đều thất bại. Lỗi cuối cùng: ${lastErrorMsg}`);
-        }
-        
         const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.error || `HTTP ${response.status}`);
+        }
         const textContent = data.candidates[0].content.parts[0].text;
         
         // Trích xuất JSON bằng RegExp nếu AI cố tình wrap bằng markdown ```json ... ```

@@ -1,4 +1,5 @@
 node_modules/
+.env
 eslint_output.log
 syntax_check.log
 dummy_lines.txt
