@@ -6800,7 +6800,7 @@ async function generateTopicWithAI() {
     try {
         const prompt = `Tạo một danh sách 100 từ vựng tiếng Anh thuộc chủ đề: "${topicInput}". Trả về CHỈ một mảng JSON hợp lệ theo định dạng chính xác sau (không markdown, không giải thích): [{"en": "word1", "vi": "nghĩa 1", "emoji": "🌍"}, {"en": "word2", "vi": "nghĩa 2", "emoji": "🚗"}]`;
         
-        const response = await fetch('/api/gemini', {
+        const response = await fetch('/api/ai', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ prompt })
@@ -6810,7 +6810,7 @@ async function generateTopicWithAI() {
         if (!response.ok) {
             throw new Error(data.error || `HTTP ${response.status}`);
         }
-        const textContent = data.candidates[0].content.parts[0].text;
+        const textContent = data.text;
         
         // Trích xuất JSON bằng RegExp nếu AI cố tình wrap bằng markdown ```json ... ```
         const jsonMatch = textContent.match(/\[[\s\S]*\]/);

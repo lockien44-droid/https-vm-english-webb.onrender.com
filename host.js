@@ -5,11 +5,15 @@ const path = require('path');
 const PORT = process.env.PORT || 3000;
 const DIR = __dirname;
 const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent';
+const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
 
-function getGeminiApiKeys() {
-    const raw = process.env.GEMINI_API_KEYS || '';
+function parseKeys(envName) {
+    const raw = process.env[envName] || '';
     return raw.split(',').map(k => k.trim()).filter(Boolean);
 }
+
+function getGeminiApiKeys() { return parseKeys('GEMINI_API_KEYS'); }
+function getOpenaiApiKeys() { return parseKeys('OPENAI_API_KEYS'); }
 
 function readBody(req) {
     return new Promise((resolve, reject) => {
@@ -28,7 +32,7 @@ function sendJson(res, status, payload) {
     res.end(JSON.stringify(payload));
 }
 
-async function handleGeminiApi(req, res) {
+function handleCorsPreflight(req, res) {
     if (req.method === 'OPTIONS') {
         res.writeHead(204, {
             'Access-Control-Allow-Origin': '*',
@@ -36,16 +40,71 @@ async function handleGeminiApi(req, res) {
             'Access-Control-Allow-Headers': 'Content-Type'
         });
         res.end();
-        return;
+        return true;
     }
+    return false;
+}
 
-    const apiKeys = getGeminiApiKeys();
-    if (apiKeys.length === 0) {
-        sendJson(res, 503, {
-            error: 'Chưa cấu hình GEMINI_API_KEYS trên server. Vào Render → Environment → thêm key mới (không đưa vào GitHub).'
-        });
-        return;
+async function callOpenAI(apiKey, prompt) {
+    const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+    const response = await fetch(OPENAI_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+            model,
+            messages: [
+                { role: 'system', content: 'You are a helpful English vocabulary teacher. Always respond with valid JSON only when asked.' },
+                { role: 'user', content: prompt }
+            ],
+            temperature: 0.7
+        })
+    });
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data?.error?.message || `HTTP ${response.status}`);
     }
+    const text = data?.choices?.[0]?.message?.content;
+    if (!text) throw new Error('OpenAI returned empty content');
+    return text;
+}
+
+async function callGemini(apiKey, prompt) {
+    const response = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.7 }
+        })
+    });
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data?.error?.message || `HTTP ${response.status}`);
+    }
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) throw new Error('Gemini returned empty content');
+    return text;
+}
+
+async function tryProvider(name, keys, callFn, prompt) {
+    let lastError = '';
+    for (let i = 0; i < keys.length; i++) {
+        try {
+            const text = await callFn(keys[i], prompt);
+            return { ok: true, text, provider: name };
+        } catch (e) {
+            lastError = e.message;
+            console.warn(`${name} key ${i + 1} failed: ${lastError}`);
+        }
+    }
+    return { ok: false, lastError, provider: name, keyCount: keys.length };
+}
+
+async function handleAiApi(req, res) {
+    if (handleCorsPreflight(req, res)) return;
 
     let body;
     try {
@@ -61,38 +120,48 @@ async function handleGeminiApi(req, res) {
         return;
     }
 
-    const payload = {
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.7 }
-    };
+    const openaiKeys = getOpenaiApiKeys();
+    const geminiKeys = getGeminiApiKeys();
+    const provider = (process.env.AI_PROVIDER || 'auto').toLowerCase();
 
-    let lastErrorMsg = '';
+    const order = [];
+    if (provider === 'openai') order.push('openai');
+    else if (provider === 'gemini') order.push('gemini');
+    else {
+        if (openaiKeys.length) order.push('openai');
+        if (geminiKeys.length) order.push('gemini');
+    }
 
-    for (let i = 0; i < apiKeys.length; i++) {
-        try {
-            const response = await fetch(`${GEMINI_URL}?key=${apiKeys[i]}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
+    if (order.length === 0) {
+        sendJson(res, 503, {
+            error: 'Chưa cấu hình AI. Trên Render thêm OPENAI_API_KEYS (ChatGPT) hoặc GEMINI_API_KEYS — không đưa key vào GitHub.'
+        });
+        return;
+    }
 
-            const data = await response.json();
+    const errors = [];
 
-            if (response.ok) {
-                sendJson(res, 200, data);
+    for (const p of order) {
+        if (p === 'openai' && openaiKeys.length) {
+            const result = await tryProvider('OpenAI', openaiKeys, callOpenAI, prompt);
+            if (result.ok) {
+                sendJson(res, 200, { text: result.text, provider: 'openai' });
                 return;
             }
-
-            lastErrorMsg = data?.error?.message || `HTTP ${response.status}`;
-            console.warn(`Gemini key ${i + 1} failed: ${lastErrorMsg}`);
-        } catch (e) {
-            lastErrorMsg = e.message;
-            console.warn(`Gemini key ${i + 1} network error:`, e);
+            errors.push(`ChatGPT: ${result.lastError} (${result.keyCount} key)`);
+        }
+        if (p === 'gemini' && geminiKeys.length) {
+            const result = await tryProvider('Gemini', geminiKeys, callGemini, prompt);
+            if (result.ok) {
+                sendJson(res, 200, { text: result.text, provider: 'gemini' });
+                return;
+            }
+            errors.push(`Gemini: ${result.lastError} (${result.keyCount} key)`);
         }
     }
 
     sendJson(res, 502, {
-        error: `Đã thử ${apiKeys.length} API key trên server nhưng đều thất bại. Lỗi cuối: ${lastErrorMsg}. Tạo key MỚI tại https://aistudio.google.com/app/apikey và cập nhật GEMINI_API_KEYS trên Render.`
+        error: `Tất cả AI đều thất bại. ${errors.join(' | ')}`
     });
 }
 
@@ -154,13 +223,15 @@ function serveStatic(req, res) {
 http.createServer(async (req, res) => {
     const urlPath = (req.url || '/').split('?')[0];
 
-    if (urlPath === '/api/gemini') {
-        await handleGeminiApi(req, res);
+    if (urlPath === '/api/ai' || urlPath === '/api/gemini') {
+        await handleAiApi(req, res);
         return;
     }
 
     serveStatic(req, res);
 }).listen(PORT, '0.0.0.0', () => {
-    const keyCount = getGeminiApiKeys().length;
-    console.log(`Server running on port ${PORT} (${keyCount} Gemini API key(s) configured)`);
+    const openai = getOpenaiApiKeys().length;
+    const gemini = getGeminiApiKeys().length;
+    const provider = process.env.AI_PROVIDER || 'auto';
+    console.log(`Server on port ${PORT} | AI: ${provider} | OpenAI: ${openai} key(s) | Gemini: ${gemini} key(s)`);
 });
