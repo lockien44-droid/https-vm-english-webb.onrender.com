@@ -1,0 +1,12 @@
+{
+  "name": "vm-english-web",
+  "version": "1.0.0",
+  "description": "Self-Study VM English learning web app",
+  "main": "host.js",
+  "scripts": {
+    "start": "node host.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

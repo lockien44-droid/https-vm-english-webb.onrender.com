@@ -1,0 +1,9 @@
+body {
+  background: transparent;
+  overflow: hidden;
+  margin: 0;
+  pointer-events: none;
+}
+canvas {
+  pointer-events: none;
+}

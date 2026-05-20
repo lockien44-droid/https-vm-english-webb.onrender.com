@@ -1,0 +1,10 @@
+node_modules/
+eslint_output.log
+syntax_check.log
+dummy_lines.txt
+debug_script.js
+find_hw.js
+test_animal_api.js
+test_api.js
+test_wiki_api.js
+test.mp3
