@@ -6784,6 +6784,7 @@ function closeAITopicGenerator() {
 async function generateTopicWithAI() {
     const topicInput = document.getElementById('ai-topic-input').value.trim();
     const apiKeys = [
+        'AIzaSyCeVLUvAyCVoMGta00as_iN9vwPO8edAto',
         'AIzaSyAufZUfJpHTg8g_mFTW6wBwyFbqN-kov5Y',
         'AIzaSyA_vxMj86UnCuIh1r8k4q1stSZes_SyMzM',
         'AIzaSyCJnCZ8cmowwDoucn47xg3quehLSIfgizc',
